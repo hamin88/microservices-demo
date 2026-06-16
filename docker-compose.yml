@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: microservices-postgres
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
+    container_name: microservices-keycloak
+    command:
+      - start-dev
+      - --import-realm
+      - --hostname=http://localhost:8180
+      - --hostname-backchannel-dynamic=true
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./docker/keycloak/realm-import:/opt/keycloak/data/import
+
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: microservices-eureka
+    ports:
+      - "8761:8761"
+
+  student-service:
+    build:
+      context: .
+      dockerfile: student-service/Dockerfile
+    container_name: microservices-student
+    environment:
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    ports:
+      - "8081:8081"
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: microservices-user
+    environment:
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/userdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      - eureka-server
+      - postgres
+    ports:
+      - "8082:8082"
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    container_name: microservices-gateway
+    environment:
+      EUREKA_SERVER_URL: http://eureka-server:8761/eureka/
+      JWT_ISSUER_URI: http://localhost:8180/realms/microservices-demo
+      JWT_JWK_SET_URI: http://keycloak:8080/realms/microservices-demo/protocol/openid-connect/certs
+    depends_on:
+      - eureka-server
+      - keycloak
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:

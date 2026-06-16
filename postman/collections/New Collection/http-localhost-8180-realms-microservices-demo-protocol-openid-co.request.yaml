@@ -1,0 +1,21 @@
+$kind: http-request
+name: http://localhost:8180/realms/microservices-demo/protocol/openid-connect/token
+url: http://localhost:8180/realms/microservices-demo/protocol/openid-connect/token
+method: POST
+headers:
+  "": ""
+body:
+  type: json
+  content: "{\r
+
+    \    \"client_id\": \"gateway-client\",\r
+
+    \    \"username\": \"demo-user\",\r
+
+    \    \"password\": \"demo123\",\r
+
+    \    \"grant_type\": \"password\"\r
+
+    }"
+auth:
+  type: noauth

@@ -1,0 +1,13 @@
+.idea
+.settings
+.project
+*.iml
+
+target
+*/target
+dist
+node_modules
+*/node_modules
+
+# Local Keycloak distribution
+keycloak-26.6.1/
