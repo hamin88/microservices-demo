@@ -1,0 +1,12 @@
+com\example\gateway\dto\CurrentUserResponse.class
+com\example\gateway\service\KeycloakAdminService$1.class
+com\example\gateway\service\KeycloakAdminService$KeycloakUserRepresentation.class
+com\example\gateway\service\KeycloakAdminService$KeycloakAdminToken.class
+com\example\gateway\dto\KeycloakUserResponse.class
+com\example\gateway\service\KeycloakAdminService.class
+com\example\gateway\service\KeycloakAdminService$KeycloakRoleRepresentation.class
+com\example\gateway\GatewayApplication.class
+com\example\gateway\filter\UserHeaderGatewayFilter.class
+com\example\gateway\service\CurrentUserService.class
+com\example\gateway\config\SecurityConfig.class
+com\example\gateway\controller\KeycloakController.class

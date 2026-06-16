@@ -1,0 +1,139 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ubuntu
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: login-ui/package-lock.json
+
+      - name: Build login UI
+        working-directory: login-ui
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Maven modules
+        run: mvn --batch-mode clean package -DskipTests
+
+      - name: Prepare runtime jars
+        run: |
+          mkdir -p dist
+          cp eureka-server/target/eureka-server-1.0-SNAPSHOT.jar dist/eureka-server.jar
+          cp gateway-service/target/gateway-service-1.0-SNAPSHOT.jar dist/gateway-service.jar
+          cp student-service/target/student-service-1.0-SNAPSHOT.jar dist/student-service.jar
+          cp user-service/target/user-service-1.0-SNAPSHOT.jar dist/user-service.jar
+          ls -lh dist
+
+      - name: Create deployment archive
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='**/target' \
+            --exclude='**/node_modules' \
+            --exclude='keycloak-26.6.1' \
+            -czf "$RUNNER_TEMP/microservices-demo.tar.gz" .
+
+      - name: Upload deployment archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: microservices-demo
+          path: ${{ runner.temp }}/microservices-demo.tar.gz
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to Ubuntu
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+
+    steps:
+      - name: Download deployment archive
+        uses: actions/download-artifact@v4
+        with:
+          name: microservices-demo
+
+      - name: Copy archive to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: "${{ secrets.SSH_PORT || 22 }}"
+          source: microservices-demo.tar.gz
+          target: /tmp
+
+      - name: Deploy with run_all.sh
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: "${{ secrets.SSH_PORT || 22 }}"
+          envs: DEPLOY_PATH
+          script: |
+            set -euo pipefail
+
+            APP_DIR="${DEPLOY_PATH:-/opt/microservices-demo}"
+
+            if command -v pkill >/dev/null 2>&1; then
+              pkill -f "$APP_DIR/dist/eureka-server.jar" || true
+              pkill -f "$APP_DIR/dist/gateway-service.jar" || true
+              pkill -f "$APP_DIR/dist/student-service.jar" || true
+              pkill -f "$APP_DIR/dist/user-service.jar" || true
+            fi
+
+            mkdir -p "$APP_DIR"
+            find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name '.env' -exec rm -rf {} +
+            tar -xzf /tmp/microservices-demo.tar.gz -C "$APP_DIR"
+            rm -f /tmp/microservices-demo.tar.gz
+
+            cd "$APP_DIR"
+            chmod +x run_all.sh
+
+            if [ -f .env ]; then
+              set -a
+              . ./.env
+              set +a
+            fi
+
+            nohup ./run_all.sh > run_all.log 2>&1 &
+            echo "$!" > run_all.pid
+            sleep 5
+
+            if ! kill -0 "$(cat run_all.pid)" >/dev/null 2>&1; then
+              echo "run_all.sh failed to start. Last log lines:" >&2
+              tail -n 100 run_all.log >&2
+              exit 1
+            fi
+
+            echo "Services started with run_all.sh. Logs: $APP_DIR/run_all.log"
