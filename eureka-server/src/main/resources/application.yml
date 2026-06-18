@@ -1,6 +1,23 @@
 server:
   port: 8761
+spring:
+  application:
+    name: eureka-server
+  profiles:
+    default: development
 eureka:
   client:
     register-with-eureka: false
     fetch-registry: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: development
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local

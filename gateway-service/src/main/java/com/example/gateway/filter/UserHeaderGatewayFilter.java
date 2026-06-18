@@ -31,6 +31,8 @@ public class UserHeaderGatewayFilter implements GlobalFilter, Ordered {
                             .mutate()
                             .header("X-Authenticated-User", username)
                             .header("X-Authenticated-Subject", jwt.getSubject())
+                            .header("X-Authenticated-Roles", String.join(",", claimList(jwt, "roles")))
+                            .header("X-Authenticated-Permissions", String.join(",", claimList(jwt, "permissions")))
                             .build();
 
                     return chain.filter(exchange.mutate().request(mutatedRequest).build());
@@ -44,10 +46,15 @@ public class UserHeaderGatewayFilter implements GlobalFilter, Ordered {
     }
 
     private String getUsername(Jwt jwt) {
-        String preferredUsername = jwt.getClaimAsString("preferred_username");
-        if (preferredUsername != null && !preferredUsername.isBlank()) {
-            return preferredUsername;
+        String username = jwt.getClaimAsString("username");
+        if (username != null && !username.isBlank()) {
+            return username;
         }
         return jwt.getSubject();
+    }
+
+    private java.util.List<String> claimList(Jwt jwt, String claimName) {
+        java.util.List<String> values = jwt.getClaimAsStringList(claimName);
+        return values == null ? java.util.List.of() : values;
     }
 }

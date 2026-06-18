@@ -3,15 +3,16 @@ server:
 spring:
   application:
     name: gateway-service
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8180/realms/microservices-demo}
-          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8180/realms/microservices-demo/protocol/openid-connect/certs}
+  profiles:
+    default: development
   cloud:
     gateway:
       routes:
+        - id: auth-login-route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/auth/login
+            - Method=POST
         - id: user-service-route
           uri: lb://user-service
           predicates:
@@ -20,15 +21,26 @@ spring:
           uri: lb://student-service
           predicates:
             - Path=/api/students/**
+security:
+  jwt:
+    secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: development
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
-keycloak:
-  base-url: ${KEYCLOAK_BASE_URL:http://localhost:8180}
-  realm: ${KEYCLOAK_REALM:microservices-demo}
-  admin:
-    realm: ${KEYCLOAK_ADMIN_REALM:master}
-    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
-    username: ${KEYCLOAK_ADMIN_USERNAME:admin}
-    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}

@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const TOKEN_URL = "http://localhost:8180/realms/microservices-demo/protocol/openid-connect/token";
-const CLIENT_ID = "gateway-client";
+const LOGIN_URL = "/api/auth/login";
 const TOKEN_STORAGE_KEY = "microservices-demo.access-token";
 
 function App() {
@@ -41,32 +40,21 @@ function App() {
     showMessage("Signing in...");
 
     try {
-      if (username !== "admin" || password !== "admin") {
-        throw new Error("Only admin/admin is allowed for this demo.");
-      }
-
-      const body = new URLSearchParams({
-        client_id: CLIENT_ID,
-        username,
-        password,
-        grant_type: "password"
-      });
-
-      const response = await fetch(TOKEN_URL, {
+      const response = await fetch(LOGIN_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          "Content-Type": "application/json"
         },
-        body
+        body: JSON.stringify({ username, password })
       });
 
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(payload.error_description || payload.error || "Login failed.");
+        throw new Error(payload.message || payload.error || "Login failed.");
       }
 
-      localStorage.setItem(TOKEN_STORAGE_KEY, payload.access_token);
-      setToken(payload.access_token);
+      localStorage.setItem(TOKEN_STORAGE_KEY, payload.accessToken);
+      setToken(payload.accessToken);
       showMessage("Signed in. Token ready for API calls.");
     } catch (error) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -110,7 +98,7 @@ function App() {
           <span className="brand-mark" aria-hidden="true">M</span>
           <div>
             <h1 id="page-title">Microservices Demo</h1>
-            <p>Sign in to request an OAuth token for gateway API calls.</p>
+            <p>Sign in to request a JWT for gateway API calls.</p>
           </div>
         </div>
 
@@ -160,11 +148,10 @@ function App() {
           <div className="actions">
             <button type="button" onClick={() => callApi("/api/students")}>Load students</button>
             <button type="button" onClick={() => callApi("/api/users")}>Load users</button>
-            <button type="button" onClick={() => callApi("/api/keycloak/me")}>Load my roles</button>
-            <button type="button" onClick={() => callApi("/api/keycloak/users")}>Load Keycloak users</button>
+            <button type="button" onClick={() => callApi("/api/auth/me")}>Load my access</button>
           </div>
 
-          <label htmlFor="token-output">OAuth access token</label>
+          <label htmlFor="token-output">JWT access token</label>
           <textarea id="token-output" readOnly spellCheck="false" value={token} />
 
           <label htmlFor="api-output">API response</label>

@@ -2,7 +2,5 @@ C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java
 C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\service\CurrentUserService.java
 C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\dto\CurrentUserResponse.java
 C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\filter\UserHeaderGatewayFilter.java
-C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\controller\KeycloakController.java
 C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\GatewayApplication.java
-C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\service\KeycloakAdminService.java
-C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\dto\KeycloakUserResponse.java
+C:\Users\Admin\Documents\GitHub\microservices-demo\gateway-service\src\main\java\com\example\gateway\controller\AuthController.java

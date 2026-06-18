@@ -57,6 +57,8 @@ GATEWAY_JAR="$(find_jar gateway-service)"
 STUDENT_JAR="$(find_jar student-service)"
 USER_JAR="$(find_jar user-service)"
 
+export SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-development}"
+
 start_service "Eureka Server" "$EUREKA_JAR" \
     --server.address=0.0.0.0
 
