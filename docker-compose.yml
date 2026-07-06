@@ -61,5 +61,17 @@ services:
     ports:
       - "8080:8080"
 
+  login-ui:
+    build:
+      context: ./login-ui
+      dockerfile: Dockerfile
+    container_name: microservices-login-ui
+    environment:
+      API_PROXY_TARGET: http://gateway-service:8080
+    depends_on:
+      - gateway-service
+    ports:
+      - "3000:3000"
+
 volumes:
   postgres-data:

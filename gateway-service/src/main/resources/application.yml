@@ -4,9 +4,22 @@ spring:
   application:
     name: gateway-service
   profiles:
-    default: development
+    default: local
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowed-origins:
+              - "http://localhost:3000"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowed-headers:
+              - "*"
       routes:
         - id: auth-login-route
           uri: lb://user-service

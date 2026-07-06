@@ -11,3 +11,10 @@ node_modules
 
 # Local Keycloak distribution
 keycloak-26.6.1/
+user-service-18082.log
+gateway-service/target/gateway-service-1.0-SNAPSHOT.jar.original
+/eureka-server/target
+/eureka-server/target
+/gateway-service/target
+/gateway-service/target
+/gateway-service/target

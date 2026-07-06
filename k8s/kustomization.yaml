@@ -1,0 +1,25 @@
+resources:
+  - postgres-pvc.yaml
+  - postgres-deployment.yaml
+  - eureka-deployment.yaml
+  - student-deployment.yaml
+  - user-deployment.yaml
+  - gateway-deployment.yaml
+  - login-ui-deployment.yaml
+  - postgres-service.yaml
+  - eureka-service.yaml
+  - student-service.yaml
+  - user-service.yaml
+  - gateway-service.yaml
+  - login-ui-service.yaml
+  - ingress.yaml
+
+configMapGenerator:
+  - name: app-config
+    literals:
+      - SPRING_PROFILES_ACTIVE=local
+      - JWT_SECRET=0123456789abcdef0123456789abcdef
+      - JWT_EXPIRATION_SECONDS=3600
+
+commonLabels:
+  app: microservices-demo

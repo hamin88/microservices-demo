@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const LOGIN_URL = "/api/auth/login";
+const API_BASE_URL = "http://localhost:8080";
+const LOGIN_URL = `${API_BASE_URL}/api/auth/login`;
 const TOKEN_STORAGE_KEY = "microservices-demo.access-token";
 
 function App() {
@@ -73,7 +74,7 @@ function App() {
     }
 
     setApiResponse("Loading...");
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
