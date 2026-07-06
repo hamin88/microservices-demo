@@ -15,6 +15,7 @@ spec:
       containers:
         - name: gateway-service
           image: microservices-demo/gateway-service:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
           env:

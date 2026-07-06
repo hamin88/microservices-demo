@@ -15,6 +15,7 @@ spec:
       containers:
         - name: student-service
           image: microservices-demo/student-service:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8081
           env:
