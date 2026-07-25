@@ -1,9 +1,9 @@
-package com.example.user.service;
+package com.example.gateway.service;
 
-import com.example.user.dto.LoginRequest;
-import com.example.user.dto.LoginResponse;
-import com.example.user.model.User;
-import com.example.user.repository.UserRepository;
+import com.example.gateway.dto.LoginRequest;
+import com.example.gateway.dto.LoginResponse;
+import com.example.gateway.model.User;
+import com.example.gateway.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;

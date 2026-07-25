@@ -1,60 +1,39 @@
 package com.example.gateway.filter;
 
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.core.Ordered;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+import org.springframework.web.servlet.function.HandlerFilterFunction;
+import org.springframework.web.servlet.function.ServerRequest;
+import org.springframework.web.servlet.function.ServerResponse;
 
-@Component
-public class UserHeaderGatewayFilter implements GlobalFilter, Ordered {
+public class UserHeaderGatewayFilter {
 
-    @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        return ReactiveSecurityContextHolder.getContext()
-                .map(securityContext -> securityContext.getAuthentication())
-                .filter(Authentication::isAuthenticated)
-                .cast(Authentication.class)
-                .flatMap(authentication -> {
-                    Object principal = authentication.getPrincipal();
-                    if (!(principal instanceof Jwt jwt)) {
-                        return chain.filter(exchange);
-                    }
+    /**
+     * Static factory utility compatible with Spring Cloud Gateway 4.1.0 MVC.
+     * Uses standard synchronous thread contexts (No WebFlux/Mono/Flux).
+     */
+    public static HandlerFilterFunction<ServerResponse, ServerResponse> extractUserHeader() {
+        return (request, next) -> {
+            // 1. Extract thread-bound security data (Fully Servlet/Tomcat safe)
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-                    String username = getUsername(jwt);
-                    ServerHttpRequest mutatedRequest = exchange.getRequest()
-                            .mutate()
-                            .header("X-Authenticated-User", username)
-                            .header("X-Authenticated-Subject", jwt.getSubject())
-                            .header("X-Authenticated-Roles", String.join(",", claimList(jwt, "roles")))
-                            .header("X-Authenticated-Permissions", String.join(",", claimList(jwt, "permissions")))
-                            .build();
+            String userId = "anonymous";
 
-                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
-                })
-                .switchIfEmpty(chain.filter(exchange));
-    }
+            // 2. Safely parse claims if a JWT is active
+            if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+                userId = jwt.getClaimAsString("user_id");
+                if (userId == null) {
+                    userId = jwt.getSubject();
+                }
+            }
 
-    @Override
-    public int getOrder() {
-        return 0;
-    }
+            // 3. Mutate the request context to downstream destinations
+            ServerRequest modifiedRequest = ServerRequest.from(request)
+                    .header("X-Authenticated-User-Id", userId)
+                    .build();
 
-    private String getUsername(Jwt jwt) {
-        String username = jwt.getClaimAsString("username");
-        if (username != null && !username.isBlank()) {
-            return username;
-        }
-        return jwt.getSubject();
-    }
-
-    private java.util.List<String> claimList(Jwt jwt, String claimName) {
-        java.util.List<String> values = jwt.getClaimAsStringList(claimName);
-        return values == null ? java.util.List.of() : values;
+            return next.handle(modifiedRequest);
+        };
     }
 }

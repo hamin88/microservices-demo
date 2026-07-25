@@ -57,3 +57,9 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://eureka-server:8761/eureka/}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+  file :
+    name: /C/Applogs/gateway-service.log
