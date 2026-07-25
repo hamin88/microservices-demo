@@ -1,0 +1,20 @@
+docker images
+
+# Check running containers
+docker ps
+
+# Build the Docker image
+docker build -t user-service:1.0 .
+docker build -f Dockerfile -t gateway-service:0.0.1-SNAPSHOT .
+
+# Run the container
+docker run -d -p 8080:8080 --name gateway-service gateway-service:0.0.1-SNAPSHOT
+
+kubectl create deployment gateway-service --image=gateway-service:0.0.1-SNAPSHOT
+kubectl get deployment gateway-service
+kubectl scale deployment gateway-service
+kubectl scale deployment gateway-service --replicas=2
+kubectl autoscale deployment gateway-service --max=5
+kubectl describe deployment gateway-service
+kubectl get deployment gateway-service -o yaml
+kubectl get pods
