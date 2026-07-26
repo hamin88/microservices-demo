@@ -1,5 +1,5 @@
 package com.example.common.utils;
- 
+
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
