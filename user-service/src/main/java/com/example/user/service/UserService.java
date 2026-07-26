@@ -67,6 +67,6 @@ public class UserService {
         }
         String salt = UUID.randomUUID().toString();
         user.setPasswordSalt(salt);
-        user.setPasswordHash(passwordService.hash(rawPassword, salt));
+        user.setPasswordHash(passwordService.hash(rawPassword));
     }
 }

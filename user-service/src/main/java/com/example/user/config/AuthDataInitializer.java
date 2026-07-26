@@ -52,7 +52,7 @@ public class AuthDataInitializer implements CommandLineRunner {
                     user.setEmail("admin@example.com");
                     user.setEnabled(true);
                     user.setPasswordSalt(ADMIN_SALT);
-                    user.setPasswordHash(passwordService.hash("admin", ADMIN_SALT));
+                    user.setPasswordHash(passwordService.hash("admin"));
                     user.getRoles().add(admin);
                     return userRepository.save(user);
                 });
