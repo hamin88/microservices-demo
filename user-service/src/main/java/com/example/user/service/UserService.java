@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.example.common.utils.PasswordService;
 
 @Service
 public class UserService {

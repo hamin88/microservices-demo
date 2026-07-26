@@ -1,4 +1,4 @@
-package com.example.security.jwt;
+package com.example.common.utils;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;

@@ -13,10 +13,14 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
+        <module>common-security</module>
+        <module>gateway-service</module>
+        <!--
         <module>eureka-server</module>
         <module>student-service</module>
+         -->
         <module>user-service</module>
-        <module>gateway-service</module>
+
     </modules>
     <properties>
         <java.version>17</java.version>
