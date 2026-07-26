@@ -20,7 +20,7 @@ public class PasswordService {
     }
 
     public String hash(String rawPassword) {
-        return encode(rawPassword);
+        return hash(rawPassword);
     }
     /**
      * Verify a plain text password against a hashed password.
