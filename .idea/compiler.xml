@@ -6,14 +6,15 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="student-service" />
+        <module name="common-security" />
         <module name="user-service" />
-        <module name="eureka-server" />
         <module name="gateway-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="config-server" target="17" />
+      <module name="eureka-server" target="17" />
+      <module name="student-service" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
