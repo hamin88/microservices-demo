@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import com.tpe.model.JobConfig;
 import com.tpe.repository.JobConfigRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Component
@@ -18,6 +19,7 @@ public class JobInitializer {
         this.schedulerService = schedulerService;
     }
 
+    @Transactional(readOnly = true)
     @EventListener(ApplicationReadyEvent.class)
     public void initializeJobsOnStartup() {
         System.out.println("Loading active jobs from database...");
@@ -25,7 +27,7 @@ public class JobInitializer {
         
         for (JobConfig job : activeJobs) {
             try {
-                schedulerService.scheduleDatabaseJob(job);
+                schedulerService.scheduleOrUpdateJob(job);
             } catch (Exception e) {
                 System.err.println("Failed to schedule job " + job.getJobId() + " on startup: " + e.getMessage());
             }

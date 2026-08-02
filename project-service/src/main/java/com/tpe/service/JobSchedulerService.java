@@ -1,69 +1,79 @@
 package com.tpe.service;
+import org.springframework.scheduling.quartz.*;
+import org.quartz.*; // Imports TriggerBuilder, CronScheduleBuilder, JobBuilder, etc.
 
-import org.quartz.*;
 import org.springframework.stereotype.Service;
 import com.tpe.model.JobConfig;
+import java.util.* ;
 
 @Service
 public class JobSchedulerService {
 
     private final Scheduler scheduler;
-    // JobTaskFactory remains unchanged as Quartz can reference it during job execution
 
+    private final Map<String, Class<? extends QuartzJobBean>> jobClassMap = Map.of(
+            "FILEIMPORT", FileImportJob.class,
+            "DATAFLOW", DataflowJob.class
+    );
     public JobSchedulerService(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
 
-    public void scheduleDatabaseJob(JobConfig jobConfig) {
-        String jobId = jobConfig.getJobId();
+    /**
+     * Dynamically registers or updates DataflowJob based on database configurations.
+     */
+    public void scheduleOrUpdateJob(JobConfig jobConfig) throws SchedulerException {
+        JobKey jobKey = new JobKey(jobConfig.getJobId(), "dynamic-quartz-group");
+        TriggerKey triggerKey = new TriggerKey(jobConfig.getJobId(), "dynamic-trigger-group");
 
-        // 1. Preserve logic: If the job is marked inactive, remove it from the runtime scheduler
+        // 1. Handle job deactivation
         if (!jobConfig.isActive()) {
-            cancelJob(jobId);
+            if (scheduler.checkExists(jobKey)) {
+                scheduler.deleteJob(jobKey);
+                System.out.println("Deleted Job from cluster: " + jobConfig.getJobId());
+            }
             return;
         }
 
-        try {
-            // 2. Preserve logic: Validate cron and setup keys
-            JobKey jobKey = new JobKey("job-" + jobId, "database-group");
-            TriggerKey triggerKey = new TriggerKey("trigger-" + jobId, "database-group");
+        // 2. Build Job Details targeting DataflowJob
+        Long ruleId = Optional.ofNullable(jobConfig)
+                .map(config -> config.getRule())       // Safely extracts Rule (skips if config is null)
+                .map(rule -> rule.getId())       // Safely extracts RuleType (skips if rule is null)
+                .orElse(null);
 
-            // 3. Preserve logic: Resolve the executable task logic at execution time by saving metadata
-            JobDetail jobDetail = JobBuilder.newJob(DataflowJob.class)
-                    .withIdentity(jobKey)
-                    .usingJobData("jobType", jobConfig.getJobType()) // Passed to factory later
-                    .usingJobData("jobId", jobId)
-                    .build();
+        String jobType =  Optional.ofNullable(jobConfig)
+                .map(config -> config.getRule())
+                .map(rule -> rule.getRuleType()) // Assuming your Rule entity has a getRuleType() method
+                .map(ruleType -> ruleType.getName()) // Assuming your RuleType enum/entity has a getName() method
+                .map(String::toUpperCase) // Converts to uppercase safely if name exists
+                .orElse("DEFAULT");
 
-            // Translate your CronTrigger logic into Quartz format
-            Trigger cronTrigger = TriggerBuilder.newTrigger()
-                    .withIdentity(triggerKey)
-                    .withSchedule(CronScheduleBuilder.cronSchedule(jobConfig.getCronExpression()) //  Correct method name
-                            .withMisfireHandlingInstructionDoNothing())
-                    .build();
-
-            // 4. Preserve logic: Thread-safe replacement (Quartz overwrites safely in H2 database)
-            if (scheduler.checkExists(jobKey)) {
-                // If it already exists, unschedule and re-schedule to update the cron/logic
-                scheduler.deleteJob(jobKey);
-            }
-
-            scheduler.scheduleJob(jobDetail, cronTrigger);
-
-        } catch (SchedulerException e) {
-            throw new RuntimeException("Failed to dynamically update Quartz job: " + jobId, e);
+        Class<? extends QuartzJobBean> jobClass = jobClassMap.get(jobType.toUpperCase());
+        if (ruleId == null || jobClass == null) {
+            throw new IllegalArgumentException("Unknown database job execution type: " + jobType);
         }
-    }
 
-    // Updated cancelJob method using Quartz
-    public void cancelJob(String jobId) {
-        try {
-            JobKey jobKey = new JobKey("job-" + jobId, "database-group");
-            if (scheduler.checkExists(jobKey)) {
-                scheduler.deleteJob(jobKey);
-            }
-        } catch (SchedulerException e) {
-            throw new RuntimeException("Failed to cancel Quartz job: " + jobId, e);
+        JobDetail jobDetail = JobBuilder.newJob(DataflowJob.class)
+                .withIdentity(jobKey)
+                .usingJobData("ruleId", ruleId != null ? ruleId.toString() : "")
+                .storeDurably() // Keeps the job structure even if triggers are replaced
+                .build();
+
+        // 3. Build the runtime Cron Trigger
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .withIdentity(triggerKey)
+                .withSchedule(CronScheduleBuilder.cronSchedule(jobConfig.getCronExpression()))
+                .build();
+
+        // 4. Update the live distributed scheduler state
+        if (scheduler.checkExists(jobKey)) {
+            // If the structure changed or cron changed, safely reschedule
+            scheduler.rescheduleJob(triggerKey, trigger);
+            System.out.println("Rescheduled existing QuartzJobBean: " + jobConfig.getJobId());
+        } else {
+            // First time registration
+            scheduler.scheduleJob(jobDetail, trigger);
+            System.out.println("Registered new QuartzJobBean: " + jobConfig.getJobId());
         }
     }
 }

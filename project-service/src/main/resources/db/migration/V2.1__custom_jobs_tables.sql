@@ -1,17 +1,20 @@
--- 1. Ensure the parent/target rules structure exists first
-CREATE TABLE IF NOT EXISTS rules (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    rule_name VARCHAR(255) NOT NULL,
-    rule_condition VARCHAR(1000)
+CREATE TABLE rule_types (
+id VARCHAR(255) PRIMARY KEY,
+name VARCHAR(255) NOT NULL
 );
-
+CREATE TABLE rules (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    rule_type_id BIGINT, -- The foreign key column definition
+    CONSTRAINT fk_rule_rule_type FOREIGN KEY (rule_type_id) REFERENCES rule_types(id)
+    ON DELETE SET NULL -- Prevents crashes if a rule is deleted out of your system
+    );
 -- Create your JobConfig entity table
 CREATE TABLE scheduled_jobs (
     job_id VARCHAR(255) PRIMARY KEY,
-    job_type VARCHAR(255) NOT NULL,
     cron_expression VARCHAR(255) NOT NULL,
-    active BOOLEAN NOT NULL,
     rule_id BIGINT, -- The foreign key column definition
+    active BOOLEAN NOT NULL,
     -- Enforce the database-level transactional link
       CONSTRAINT fk_job_config_rule FOREIGN KEY (rule_id) REFERENCES rules(id)
       ON DELETE SET NULL -- Prevents crashes if a rule is deleted out of your system

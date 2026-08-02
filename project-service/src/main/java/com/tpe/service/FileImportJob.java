@@ -6,10 +6,10 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DataflowJob extends QuartzJobBean {
+public class FileImportJob extends QuartzJobBean {
 
     @Override
     protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
-        System.out.println("DataflowJob Job executed successfully at: " + context.getFireTime());
+        System.out.println("FileImportJob Job executed successfully at: " + context.getFireTime());
     }
 }

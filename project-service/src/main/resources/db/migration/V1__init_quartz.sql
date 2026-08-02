@@ -98,9 +98,11 @@ CREATE TABLE IF NOT EXISTS qrtz_paused_trigger_grps (
     PRIMARY KEY (sched_name, trigger_group)
 );
 
-CREATE TABLE IF NOT EXISTS qrtz_fired_triggers (
-    entry_id VARCHAR(95) NOT NULL,
+CREATE TABLE qrtz_fired_triggers (
     sched_name VARCHAR(120) NOT NULL,
+    entry_id VARCHAR(95) NOT NULL,
+    trigger_name VARCHAR(200) NOT NULL,
+    trigger_group VARCHAR(200) NOT NULL,
     instance_name VARCHAR(200) NOT NULL,
     fired_time BIGINT NOT NULL,
     sched_time BIGINT NOT NULL,
@@ -110,8 +112,15 @@ CREATE TABLE IF NOT EXISTS qrtz_fired_triggers (
     job_group VARCHAR(200) NULL,
     is_nonconcurrent BOOLEAN NULL,
     requests_recovery BOOLEAN NULL,
-    PRIMARY KEY (entry_id, sched_name)
+    PRIMARY KEY (sched_name, entry_id)
 );
+
+-- Recreate index definitions for runtime performance tracking
+--CREATE INDEX idx_qrtz_ft_trig_inst_name ON qrtz_fired_triggers(sched_name, instance_name);
+--CREATE INDEX idx_qrtz_ft_job_req_recovery ON qrtz_fired_triggers(sched_name, requests_recovery);
+--CREATE INDEX idx_qrtz_ft_j_g ON qrtz_fired_triggers(sched_name, job_name, job_group);
+--CREATE INDEX idx_qrtz_ft_t_g ON qrtz_fired_triggers(sched_name, trigger_name, trigger_group);
+
 
 -- 4. Create Node Health Monitoring & Cluster Locking Tables
 CREATE TABLE IF NOT EXISTS qrtz_scheduler_state (

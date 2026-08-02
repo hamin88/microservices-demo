@@ -10,11 +10,12 @@ public class Rule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // This is the "id" referenced by jobConfig.ruleId
 
-    @Column(name = "rule_name", nullable = false)
+    @Column(name = "name", nullable = false)
     private String ruleName;
 
-    @Column(name = "rule_condition", length = 1000)
-    private String ruleCondition;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rule_type_id", referencedColumnName = "id", nullable = true)
+    private RuleType ruleType;
 
     // Default Constructor (Required by JPA)
     public Rule() {}
@@ -26,6 +27,6 @@ public class Rule {
     public String getRuleName() { return ruleName; }
     public void setRuleName(String ruleName) { this.ruleName = ruleName; }
 
-    public String getRuleCondition() { return ruleCondition; }
-    public void setRuleCondition(String ruleCondition) { this.ruleCondition = ruleCondition; }
+    public RuleType getRuleType() { return ruleType; }
+    public void setRuleType(RuleType ruleType) { this.ruleType = ruleType; }
 }
