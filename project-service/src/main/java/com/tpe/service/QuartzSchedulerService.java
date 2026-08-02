@@ -28,9 +28,14 @@ public class QuartzSchedulerService {
         }
 
         // 2. Build Job Details targeting DataflowJob
+        Long ruleId = null;
+        if (jobConfig.getRule() != null) {
+            ruleId = jobConfig.getRule().getId(); // Extract the long ID safely
+        }
         JobDetail jobDetail = JobBuilder.newJob(DataflowJob.class)
                 .withIdentity(jobKey)
                 .usingJobData("jobType", jobConfig.getJobType()) // Context payload
+                .usingJobData("ruleId", ruleId != null ? ruleId.toString() : "")
                 .storeDurably() // Keeps the job structure even if triggers are replaced
                 .build();
 
