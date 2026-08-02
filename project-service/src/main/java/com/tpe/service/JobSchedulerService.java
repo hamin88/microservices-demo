@@ -1,60 +1,69 @@
 package com.tpe.service;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.support.CronTrigger;
-import org.springframework.stereotype.Service;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import com.tpe.model.JobConfig;
 
+import org.quartz.*;
+import org.springframework.stereotype.Service;
+import com.tpe.model.JobConfig;
 
 @Service
 public class JobSchedulerService {
 
-    private final TaskScheduler taskScheduler;
-    private final JobTaskFactory jobTaskFactory;
-    private final Map<String, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+    private final Scheduler scheduler;
+    // JobTaskFactory remains unchanged as Quartz can reference it during job execution
 
-    public JobSchedulerService(TaskScheduler taskScheduler, JobTaskFactory jobTaskFactory) {
-        this.taskScheduler = taskScheduler;
-        this.jobTaskFactory = jobTaskFactory;
+    public JobSchedulerService(Scheduler scheduler) {
+        this.scheduler = scheduler;
     }
 
-    /**
-     * Call this whenever a job is created, updated, or enabled in the database.
-     */
     public void scheduleDatabaseJob(JobConfig jobConfig) {
         String jobId = jobConfig.getJobId();
 
-        // If the job is marked inactive, remove it from the runtime scheduler
+        // 1. Preserve logic: If the job is marked inactive, remove it from the runtime scheduler
         if (!jobConfig.isActive()) {
             cancelJob(jobId);
             return;
         }
 
-        // Validate cron and resolve the executable task logic
-        CronTrigger cronTrigger = new CronTrigger(jobConfig.getCronExpression());
-        Runnable taskLogic = jobTaskFactory.getTask(jobConfig.getJobType());
+        try {
+            // 2. Preserve logic: Validate cron and setup keys
+            JobKey jobKey = new JobKey("job-" + jobId, "database-group");
+            TriggerKey triggerKey = new TriggerKey("trigger-" + jobId, "database-group");
 
-        // Thread-safe scheduler replacement
-        scheduledTasks.compute(jobId, (key, existingTask) -> {
-            if (existingTask != null) {
-                existingTask.cancel(true);
+            // 3. Preserve logic: Resolve the executable task logic at execution time by saving metadata
+            JobDetail jobDetail = JobBuilder.newJob(DataflowJob.class)
+                    .withIdentity(jobKey)
+                    .usingJobData("jobType", jobConfig.getJobType()) // Passed to factory later
+                    .usingJobData("jobId", jobId)
+                    .build();
+
+            // Translate your CronTrigger logic into Quartz format
+            Trigger cronTrigger = TriggerBuilder.newTrigger()
+                    .withIdentity(triggerKey)
+                    .withSchedule(CronScheduleBuilder.cronSchedule(jobConfig.getCronExpression()) //  Correct method name
+                            .withMisfireHandlingInstructionDoNothing())
+                    .build();
+
+            // 4. Preserve logic: Thread-safe replacement (Quartz overwrites safely in H2 database)
+            if (scheduler.checkExists(jobKey)) {
+                // If it already exists, unschedule and re-schedule to update the cron/logic
+                scheduler.deleteJob(jobKey);
             }
-            return taskScheduler.schedule(taskLogic, cronTrigger);
-        });
-        
-        System.out.println("Successfully synchronized Job [" + jobId + "] from DB config.");
+
+            scheduler.scheduleJob(jobDetail, cronTrigger);
+
+        } catch (SchedulerException e) {
+            throw new RuntimeException("Failed to dynamically update Quartz job: " + jobId, e);
+        }
     }
 
-    /**
-     * Call this when a job is explicitly disabled or deleted.
-     */
+    // Updated cancelJob method using Quartz
     public void cancelJob(String jobId) {
-        ScheduledFuture<?> scheduledTask = scheduledTasks.remove(jobId);
-        if (scheduledTask != null) {
-            scheduledTask.cancel(true);
-            System.out.println("Job [" + jobId + "] stopped and removed from memory.");
+        try {
+            JobKey jobKey = new JobKey("job-" + jobId, "database-group");
+            if (scheduler.checkExists(jobKey)) {
+                scheduler.deleteJob(jobKey);
+            }
+        } catch (SchedulerException e) {
+            throw new RuntimeException("Failed to cancel Quartz job: " + jobId, e);
         }
     }
 }
