@@ -27,7 +27,7 @@ public class JobInitializer {
         
         for (JobConfig job : activeJobs) {
             try {
-                schedulerService.scheduleOrUpdateJob(job);
+                schedulerService.scheduleOrUpdateJob(job, true, null);
             } catch (Exception e) {
                 System.err.println("Failed to schedule job " + job.getJobId() + " on startup: " + e.getMessage());
             }

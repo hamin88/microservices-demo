@@ -15,6 +15,7 @@ public class JobSchedulerService {
             "FILEIMPORT", FileImportJob.class,
             "DATAFLOW", DataflowJob.class
     );
+
     public JobSchedulerService(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
@@ -22,7 +23,7 @@ public class JobSchedulerService {
     /**
      * Dynamically registers or updates DataflowJob based on database configurations.
      */
-    public void scheduleOrUpdateJob(JobConfig jobConfig) throws SchedulerException {
+    public void scheduleOrUpdateJob(JobConfig jobConfig, boolean withcronExpression , Date executionTime) throws SchedulerException {
         JobKey jobKey = new JobKey(jobConfig.getJobId(), "dynamic-quartz-group");
         TriggerKey triggerKey = new TriggerKey(jobConfig.getJobId(), "dynamic-trigger-group");
 
@@ -60,11 +61,24 @@ public class JobSchedulerService {
                 .build();
 
         // 3. Build the runtime Cron Trigger
-        Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity(triggerKey)
-                .withSchedule(CronScheduleBuilder.cronSchedule(jobConfig.getCronExpression()))
-                .build();
+        TriggerBuilder<Trigger> triggerBuilder = TriggerBuilder.newTrigger()
+                .withIdentity(triggerKey);
 
+        if (withcronExpression) {
+            triggerBuilder.withSchedule(
+                    CronScheduleBuilder.cronSchedule(jobConfig.getCronExpression())
+                            .withMisfireHandlingInstructionDoNothing()
+            );
+        } else {
+            triggerBuilder.startAt(executionTime)
+                    .withSchedule(
+                            SimpleScheduleBuilder.simpleSchedule()
+                                    .withMisfireHandlingInstructionFireNow()
+                    );
+        }
+
+// 3. Build your final generic trigger
+        Trigger trigger = triggerBuilder.build();
         // 4. Update the live distributed scheduler state
         if (scheduler.checkExists(jobKey)) {
             // If the structure changed or cron changed, safely reschedule
