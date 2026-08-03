@@ -27,7 +27,7 @@ public class CsvExportService {
     public void writeRecordsToCsv(OutputStream outputStream) {
         // Use .build() or .get() depending on your commons-csv version
         CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-                .setHeader("Rule ID") // Adjust headers to match your Rule fields
+                .setHeader("Rule ID") // Adjust headers to match your Rule fields provide comma-separated values for multiple headers if needed
                 .build();
 
         try (
