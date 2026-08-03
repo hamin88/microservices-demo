@@ -1,31 +1,31 @@
 package com.tpe.service;
 
 import com.tpe.model.Dataflow;
-import com.tpe.model.JobConfig;
+import com.tpe.model.Rule;
 import com.tpe.repository.DataflowRepository;
+import com.tpe.repository.RuleRepository;
 import jakarta.transaction.Transactional;
-import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class DataflowService {
+public class RuleService {
 
     @Autowired
-    private DataflowRepository dataflowrepository;
+    private RuleRepository dataflowrepository;
 
-    public List<Dataflow> findAll() {
+    public List<Rule> findAll() {
         return dataflowrepository.findAll();
     }
 
-    public Dataflow findById(Long id) {
-        return dataflowrepository.findByRuleId(id);
+    public Rule findById(Long id) {
+        return dataflowrepository.findById(id).orElse(null);
     }
 
     @Transactional
-    public Dataflow saveAndFlush(Dataflow dataflow) {
-        return dataflowrepository.saveAndFlush(dataflow);
+    public Rule saveAndFlush(Rule rule) {
+        return dataflowrepository.saveAndFlush(rule);
     }
 }

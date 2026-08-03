@@ -1,5 +1,7 @@
 package com.tpe.dto;
 
-public record DataflowDTO ( Long ruleId) {
+import jakarta.validation.constraints.NotNull;
+
+public record DataflowDTO (@NotNull(message = "Rule ID is required")  Long ruleId) {
 
 }
