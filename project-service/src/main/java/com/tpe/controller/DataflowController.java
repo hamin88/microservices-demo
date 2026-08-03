@@ -1,46 +1,32 @@
 package com.tpe.controller;
 
-import com.tpe.dto.TaskRequest;
+import com.tpe.dto.DataflowDTO;
 import com.tpe.model.*;
 
-import com.tpe.service.JobSchedulerService;
-import org.quartz.SchedulerException;
-import org.springframework.http.ResponseEntity;
+import com.tpe.service.DataflowService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
-@RequestMapping("/api/dataflow")
+@RequestMapping("/api/dataflows")
 public class DataflowController {
+    @Autowired
+    private  DataflowService dataflowService;
 
-    private final JobSchedulerService jobSchedulerService;
-
-    public DataflowController(JobSchedulerService jobSchedulerService) {
-        this.jobSchedulerService = jobSchedulerService;
+    @GetMapping
+    public List<DataflowDTO>  getAll() {
+        List<Dataflow> dataflows =dataflowService.findAll();
+        List<DataflowDTO> dataflowList =
+        dataflows.stream().map(x-> new DataflowDTO(x.getRuleId()))
+                .collect(Collectors.toList());
+        return dataflowList;
     }
-
-    @GetMapping("/schedule")
-    public ResponseEntity<String> scheduleAtTimestamp() {
-        //@RequestBody TaskRequest request
-        try {
-            String rawJobId = "dataflow_job_attime";
-            String rawJobType = "DATAFLOW";
-            Long rawRuleId = 45L;
-            String rawTimeStr = "2026-08-25T15:30:00"; // ISO-8601 pattern string
-            TaskRequest request = new TaskRequest(rawJobId, rawJobType, rawRuleId, rawTimeStr);
-            JobConfig jobConfig = new JobConfig();
-            jobConfig.setJobId(rawJobId);
-            Rule rule = new Rule();
-            rule.setId(2L);
-            RuleType ruleType = new RuleType();
-            ruleType.setId(2L);
-            ruleType.setName("DATAFLOW");
-            rule.setRuleType(ruleType);
-            jobConfig.setRule(rule);
-            jobConfig.setActive(true);
-            jobSchedulerService.scheduleOrUpdateJob(jobConfig , false, request.getQuartzExecutionDate());
-            return ResponseEntity.ok("Persistent task successfully registered into H2 database context.");
-        } catch (SchedulerException e) {
-            return ResponseEntity.internalServerError().body("Quartz engine ingestion failure: " + e.getMessage());
-        }
+    @GetMapping("/{id}")
+    public DataflowDTO getById(@PathVariable ("id") Long id) {
+        Dataflow dataflow =dataflowService.findById(id);
+        return new DataflowDTO (dataflow.getRuleId());
     }
 }

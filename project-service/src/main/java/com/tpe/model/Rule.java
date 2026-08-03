@@ -1,7 +1,6 @@
 package com.tpe.model;
 
 import jakarta.persistence.*;
-
 @Entity
 @Table(name = "rules") // Matches the table name in your Flyway script
 public class Rule {

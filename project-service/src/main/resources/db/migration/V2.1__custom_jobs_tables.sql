@@ -9,6 +9,12 @@ CREATE TABLE rules (
     CONSTRAINT fk_rule_rule_type FOREIGN KEY (rule_type_id) REFERENCES rule_types(id)
     ON DELETE SET NULL -- Prevents crashes if a rule is deleted out of your system
     );
+
+  CREATE TABLE dataflows (
+      rule_id BIGINT PRIMARY KEY,
+      CONSTRAINT fk_dataflow_rule
+      FOREIGN KEY (rule_id) REFERENCES rules(id)
+  );
 -- Create your JobConfig entity table
 CREATE TABLE scheduled_jobs (
     job_id VARCHAR(255) PRIMARY KEY,

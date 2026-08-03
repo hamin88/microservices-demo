@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="common-security" />
         <module name="user-service" />
+        <module name="project-service" />
         <module name="gateway-service" />
       </profile>
     </annotationProcessing>
@@ -22,6 +23,7 @@
       <module name="config-server" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
       <module name="gateway-service" options="-parameters" />
+      <module name="project-service" options="-parameters" />
       <module name="student-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
     </option>
