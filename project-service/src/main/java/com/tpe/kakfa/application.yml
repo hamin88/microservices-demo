@@ -1,0 +1,13 @@
+spring:
+  kafka:
+    consumer:
+      # Set the standard key deserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # Set the Spring JSON deserializer for the value
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    properties:
+      spring:
+        json:
+          # Tell Kafka which target package/class is allowed for deserialization
+          trusted:
+            packages: "com.example.yourproject.model"
